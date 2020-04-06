@@ -99,7 +99,7 @@ web 是基于python自带的http基础包建立
 
     web=Annotation.WebServlce("127.0.0.1",80)
 
-这样 就可以启动队友的端口服务 不然也可以，
+这样 就可以启动端口服务 不然也可以，
 
      web=Annotation.WebServlce()
      web.start(host,port)
