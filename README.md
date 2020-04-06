@@ -212,7 +212,7 @@ web 是基于python自带的http基础包建立
         :param kwargs:
         :return:
         """
-      @sc.ead(mode="TCP",Type="servlce"，....):
+      @sc.read(mode="TCP",Type="servlce"，....):
       def servlce(x,...):
           参数的第一个强制性给类read_stream 
         """ read_stream的参数
