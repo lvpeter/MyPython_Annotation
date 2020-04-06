@@ -139,7 +139,7 @@ web 是基于python自带的http基础包建立
             
             
 当你的属性是static 那么你的返回内容是必须静态路径，因为返回给前端的是你这个路径的文件，
-其中文件，其中注意要填写content-type 虽然我有写几个常用的content-type 的适应
+其中注意要填写content-type 虽然我有写几个常用的content-type 的适应
         
           @web.route("/",Type="static")
           def ser1(r,w):
