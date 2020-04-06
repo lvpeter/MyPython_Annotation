@@ -125,10 +125,10 @@ web 是基于python自带的http基础包建立
         :param Type: 你返回的是静态文件static ，还是动态数据active 
         :return:
         """
-       @web.route("/",Type="active")
-       def ser1(r,w):
-           强制性要求 路由方法要有2个参数，r 对应request，w对应response ，因为我golang习惯这样
-           pass
+         @web.route("/",Type="active")
+         def ser1(r,w):
+            强制性要求 路由方法要有2个参数，r 对应request，w对应response ，因为我golang习惯这样
+            pass
            
            
            
@@ -158,9 +158,9 @@ web 是基于python自带的http基础包建立
             w.headers["content-type"]="text/html"
             w.status=200
             return “内容”   
-              @web.route("/",Type="active")
-              
-          def ser2(r,w):
+            
+           @web.route("/",Type="active")  
+           def ser2(r,w):
            强制性要求 路由方法要有2个参数，r 对应request，w对应response ，因为我golang习惯这样
             w.headers["content-type"]="text/html"
             w.status=200
