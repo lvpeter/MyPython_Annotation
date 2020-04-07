@@ -1,5 +1,4 @@
 import asyncio
-import pymysql
 import re
 import threading
 import time
@@ -11,7 +10,7 @@ import os
 import io
 
 from http import server, HTTPStatus, cookies
-from urllib import parse
+from urllib import parse,request,response
 
 """
   os File
@@ -51,6 +50,94 @@ class File:
                 return "application/octet-stream"
             else:
                 return result
+
+"""
+    Request And Response
+"""
+class Request:
+    def __init__(self):
+        self.responseDict:dict={}
+
+    def request(self,
+                url:str,
+                body=None,
+                Method:str="GET",
+                headers:dict=None,
+                timeout:int=5,
+                proxy:str=None):
+
+        return self.__Request(
+            **{"url": url, "body": body,
+             "Method": Method, "headers": headers,
+             "timeout": timeout, "proxy": proxy}
+        )
+    def req(self,
+            url: str,
+            body=None,
+            Method: str = "GET",
+            headers: dict = None,
+            timeout: int = 5,
+            proxy: str = None,
+            **kwargs):
+        def func(f):
+            if f.__code__.co_argcount <1:
+                       warnings.warn(str(f.__name__)+"的参数少于1")
+                       return f
+
+            self.responseDict[f.__name__]={"func":f,"url":url,"body":body,
+                                           "Method":Method,"headers":headers,
+                                           "timeout":timeout,"proxy":proxy,"kwargs":kwargs}
+
+            res=self.__Request(**self.responseDict[f.__name__])
+            if res is None:
+                f(None,**kwargs)
+            else:
+                res["name"]=f.__name__
+                f(res,**kwargs)
+            return f
+        return func
+    def xreq(self,
+              name,
+             **kwargs
+              ):
+        if isinstance(name,dict):
+              name=name["name"]
+        elif  not isinstance(name,str):
+              name=name.__name__
+        if self.responseDict.get(name)    is None:
+               warnings.warn("无"+name+"这个方法")
+               return
+        for k in kwargs:
+            self.responseDict[name][k]=kwargs[k]
+        self.responseDict[name]["func"](self.__Request(**self.responseDict[name]), **self.responseDict[name]["kwargs"])
+
+    def __Request(  self,
+                   **kwargs
+                   ):
+        headers = {}
+        headers["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
+        headers["user-agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36"
+        headers["accept-language"] = "zh-CN,zh;q=0.9"
+        if not kwargs.get("headers") is None:
+            for k in kwargs.get("headers"):
+                headers[k]=kwargs[k]
+        if  not kwargs["body"] is None and str(kwargs["Method"]).upper()=="GET":
+                warnings.warn("body 不是None 而且 Type是GET ，自动转换POST")
+                kwargs["Method"]="POST"
+        requrl= request.Request(url=kwargs["url"],data=kwargs["body"],headers=headers,method=kwargs["Method"])
+        res=None
+        if not kwargs["proxy"] is None:
+                res = request.urlopen(requrl,timeout=kwargs["timeout"])
+
+        else:
+                 res = request.build_opener(request.ProxyHandler(kwargs["proxy"])).open(requrl,timeout=kwargs["timeout"])
+
+        if  res is None:
+            return  None
+        else:
+            return {"URL":res.geturl(),"code":res.getcode(),"info":res.info(),"body":res.read()}
+
+
 
 
 """
@@ -118,7 +205,8 @@ class _Response:
             self.Object.send_header("Set-Cookie",self.__set_simplecookie.output()[len("Set-Cookie:"):])
 
         self.Object.end_headers()
-    def setCookie(self, name: str,
+    def setCookie(self,
+                  name: str,
                   value: str,
                   comment:str=None,
                   domain: str = None,
@@ -353,7 +441,7 @@ class WebServlce:
     def route(self, route_: str, Type: str = "static"):
         """
         :param route_: 你的路由 正则
-        :param Type: 你返回的是静态文件static ，还是动态数据active 动态数据要自己设置Content-type
+        :param Type: 你返回的是静态文件static ，还是动态数据active
         :return:
         """
         if ["static", "active"].count(Type) != 1:
@@ -402,6 +490,7 @@ class read_stream:
         thisObject 你的Socket的 本身
         read 读取的数据大小按照 bufsize
         remoteObject TCP servlce情况下的客户对象
+        remoteAddr 对方的Ip信息
         Atttibute 开启的基本参数
         bufsize 读取的字节大小
         """
@@ -758,11 +847,13 @@ class SQL_Format:
 
 class Mytion_SQL:
     def __init__(self,
-                 host
-                 , user,
+                 host,
+                 user,
                  passwd,
                  port: int = 3306,
                  database: str = ""):
+        import pymysql
+        self.pymysql: pymysql = pymysql
         self.__user = user
         self.__passwd = passwd
         self.__port = port
@@ -774,7 +865,7 @@ class Mytion_SQL:
         self.__MOTION = {"exec": self.__exec, "insert": self.__exec, "update": self.__exec, "query": self.__query,
                          "delete": self.__exec}
         try:
-            self.__MYSQL = pymysql.Connect(host=host, user=user, password=passwd, port=port, database=database)
+            self.__MYSQL = self.pymysql.Connect(host=host, user=user, password=passwd, port=port, database=database)
             self.__isConnect = True
         except Exception as e:
             print(e)
@@ -787,7 +878,7 @@ class Mytion_SQL:
               port: int = 3306,
               database: str = ""):
         try:
-            self.__MYSQL = pymysql.Connect(host=host, user=user, password=passwd, port=port, database=database)
+            self.__MYSQL = self.pymysql.Connect(host=host, user=user, password=passwd, port=port, database=database)
             self.__isConnect = True
         except Exception as e:
             print(e)
